@@ -22,35 +22,38 @@ jobs:
         python-version: '3.9'
         cache: 'pip'
 
-    - name: 安装依赖
-      # 使用GitHub Actions的条件语法替代脚本内的if判断
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-      # macOS额外安装步骤单独写
+    # 安装SSL依赖（确保HTTPS正常工作）
+    - name: 安装Windows依赖
       if: matrix.os == 'windows-latest'
+      run: |
+        choco install openssl
+        echo "C:\Program Files\OpenSSL\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8
 
-    - name: 安装依赖 (macOS)
+    - name: 安装macOS依赖
+      if: matrix.os == 'macos-latest'
+      run: |
+        brew install openssl
+        brew install python-tk  # 单独安装tkinter系统依赖
+        echo "export PATH=/usr/local/opt/openssl/bin:$PATH" >> ~/.bash_profile
+
+    # 安装Python依赖（不含tkinter，因为它是标准库）
+    - name: 安装项目依赖
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        brew install python-tk
-      if: matrix.os == 'macos-latest'
 
     - name: 打包程序 (Windows)
+      if: matrix.os == 'windows-latest'
       run: |
         pyinstaller --onefile --windowed --name "实时翻译助手" *.py
-      if: matrix.os == 'windows-latest'
 
     - name: 打包程序 (macOS)
+      if: matrix.os == 'macos-latest'
       run: |
         pyinstaller --onefile --windowed --name "实时翻译助手" *.py
-      if: matrix.os == 'macos-latest'
 
     - name: 上传打包产物
       uses: actions/upload-artifact@v4
       with:
         name: 翻译助手-${{ matrix.os }}
-        path: |
-          dist/
-          !dist/_internal
+        path: dist/
