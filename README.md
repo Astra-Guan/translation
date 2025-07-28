@@ -1,4 +1,4 @@
 # translation
 a simple translation
-pip install deep-translator
-pip install tkinter
+/n pip install deep-translator
+/n pip install tkinter
